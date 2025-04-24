@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,Response,status,HTTPException
 from fastapi.params import Body
 from pydantic import BaseModel
 from typing_extensions import Optional
@@ -24,11 +24,13 @@ def find_post(id):
 def root():
     return {"message":"Welcome to my api!!!!!"}
 
+#getting all post
 @app.get("/posts")
 def get_posts():
     return{"data":my_posts}
 
-@app.post("/posts")
+#create post
+@app.post("/posts",status_code=status.HTTP_201_CREATED)
 def create_posts(post:Post):
     # print(post)
     # print(post.dict())
@@ -37,10 +39,20 @@ def create_posts(post:Post):
     my_posts.append(post_dict)
     return {"data":post_dict}
 
+#getting individual post
 @app.get("/posts/{id}")
-def get_post(id):
-    # manually convert to int() even if we gave int as paramenter it will default change to str
-    post=find_post(int(id))
+def get_post(id:int,response:Response):
+    # manually convert to int even if we gave int as paramenter it will default change to str
+    post=find_post(id)
     print(post)
+    if not post:
+        #instead of below lines import http and then use that
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Post with id: {id} was not found")
+        # response.status_code=status.HTTP_404_NOT_FOUND
+        # return {"message":f"Post with id: {id} was not found"}
     return{"Post detail":post}
+
+#to delete a post
+
 
