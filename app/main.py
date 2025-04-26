@@ -15,18 +15,17 @@ class Post(BaseModel):
     published : bool = True
     # rating: Optional[int]=None
 
-while True:
+# while True:
 # connecting database
-    try:
-        conn=psycopg2.connect(host='localhost',database='fastapi',user='postgres',
-                            password=123456789,cursor_factory=RealDictCursor)
-        cursor=conn.cursor()
-        print("Database connection was successfull")
-        break
-    except Exception as error:
-        print("Connecting to database failed")
-        print("Error: ",error)
-        time.sleep(2)
+try:
+    conn=psycopg2.connect(host='localhost',database='fastapi',user='postgres',
+                        password='123456789',cursor_factory=RealDictCursor)
+    cursor=conn.cursor()
+    print("Database connection was successfull")
+except Exception as error:
+    print("Connecting to database failed")
+    print("Error: ",error)
+    time.sleep(2)
 
 my_posts=[{"title":"title of post 1","content":"content of post 1","id":1},
           {"title":"favorite foods","content":"I like pizza","id":2}]
@@ -51,25 +50,24 @@ def root():
 @app.get("/posts")
 def get_posts():
     cursor.execute("""SELECT * FROM posts""")
-    pasts=cursor.fetchall
-    return{"data":pasts}
+    posts=cursor.fetchall()
+    return{"data":posts}
 
 #create post
 @app.post("/posts",status_code=status.HTTP_201_CREATED)
 def create_posts(post:Post):
-    # print(post)
-    # print(post.dict())
-    post_dict=post.dict()
-    post_dict['id']=randrange(0,1000000)
-    my_posts.append(post_dict)
-    return {"data":post_dict}
+    cursor.execute("""INSERT INTO posts (title,content,published) VALUES (%s, %s, %s) RETURNING * """,
+                   (post.title,post.content,post.published))
+    new_post=cursor.fetchone()
+    conn.commit()
+    return {"data":new_post}
 
 #getting individual post
 @app.get("/posts/{id}")
-def get_post(id:int,response:Response):
+def get_post(id:int):
     # manually convert to int even if we gave int as paramenter it will default change to str
-    post=find_post(id)
-    print(post)
+    cursor.execute("""SELECT * FROM posts WHERE id=%s""",(str(id)))
+    post=cursor.fetchone()
     if not post:
         #instead of below lines import http and then use that
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
