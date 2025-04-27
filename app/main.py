@@ -1,4 +1,4 @@
-from fastapi import FastAPI,Response,status,HTTPException
+from fastapi import FastAPI,Response,status,HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from typing_extensions import Optional
@@ -6,8 +6,20 @@ from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
+from sqlalchemy.orm import Session
+from . import models
+from .database import engine,SessionLocal
+
+models.Base.metadata.create_all(bind=engine)
 
 app=FastAPI()
+
+def get_db():
+    db=SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 class Post(BaseModel):
     title : str
@@ -46,6 +58,10 @@ def find_index_post(id):
 def root():
     return {"message":"Welcome to my api!!!!!"}
 
+@app.get("/sqlalchemy")
+def test_posts(db:Session=Depends(get_db)):
+    return{"status":"success"}
+
 #getting all post
 @app.get("/posts")
 def get_posts():
@@ -66,7 +82,7 @@ def create_posts(post:Post):
 @app.get("/posts/{id}")
 def get_post(id:int):
     # manually convert to int even if we gave int as paramenter it will default change to str
-    cursor.execute("""SELECT * FROM posts WHERE id=%s""",(str(id)))
+    cursor.execute("""SELECT * FROM posts WHERE id=%s""",(str(id),))
     post=cursor.fetchone()
     if not post:
         #instead of below lines import http and then use that
@@ -82,25 +98,27 @@ def delete_post(id: int):
     #deleting post
     #find index in the array that has req id
     #my_post.pop(index)
-    index=find_index_post(id)
+    cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING * """,(str(id)))
+    deleted_post=cursor.fetchone()
+    conn.commit()
 
-    if index==None:
+    if deleted_post==None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail=f'Post with id {id} doesnot exist')
 
-    my_posts.pop(index)
     # return{'message':'post was successfully deleted'}
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 #update post
 @app.put("/posts/{id}")
 def update_post(id:int, post:Post):
-    index=find_index_post(id)
+    cursor.execute("""UPDATE posts SET title =%s, content=%s, published=%s 
+                   WHERE id = %s RETURNING * """,
+                   (post.title,post.content,post.published,str(id)))
+    updated_post=cursor.fetchone()
+    conn.commit()
 
-    if index==None:
+    if updated_post==None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail=f'Post with id {id} doesnot exist')
-    post_dict=post.dict()
-    post_dict['id']=id
-    my_posts[index]=post_dict
-    return{'data':post_dict}
+    return{'data':updated_post}
