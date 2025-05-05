@@ -13,6 +13,7 @@ class PostCreate(PostBase):
 class Post(PostBase):
     id:int
     created_at: datetime
+    onwer_id:int
     # to convert to pydantic from sql alchemy
     class Config:
         orm_mode=True
