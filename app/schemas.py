@@ -9,18 +9,6 @@ class PostBase(BaseModel):
 
 class PostCreate(PostBase):
     pass
-       
-class Post(PostBase):
-    id:int
-    created_at: datetime
-    onwer_id:int
-    # to convert to pydantic from sql alchemy
-    class Config:
-        orm_mode=True
-
-class UserCreate(BaseModel):
-    email:EmailStr
-    password:str
 
 class UserOut(BaseModel):
     id:int
@@ -29,6 +17,21 @@ class UserOut(BaseModel):
 
     class Config:
         orm_mode=True
+
+class Post(PostBase):
+    id:int
+    created_at: datetime
+    onwer_id:int
+    owner:UserOut
+    # to convert to pydantic from sql alchemy
+    class Config:
+        orm_mode=True
+
+class UserCreate(BaseModel):
+    email:EmailStr
+    password:str
+
+
 
 class UserLogin(BaseModel):
     email:EmailStr
