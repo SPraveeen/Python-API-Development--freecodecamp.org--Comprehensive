@@ -21,7 +21,7 @@ class UserOut(BaseModel):
 class Post(PostBase):
     id:int
     created_at: datetime
-    onwer_id:int
+    owner_id:int
     owner:UserOut
     # to convert to pydantic from sql alchemy
     class Config:
