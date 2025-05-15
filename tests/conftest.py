@@ -8,6 +8,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from app.database import get_db
 from app.database import Base
 from alembic import command
+from app.oauth2 import create_access_token
+from app import models
 
 SQLALCHEMY_DATABASE_URL='postgresql://postgres:password123@localhost:5432/fastapi_test'
 #connecting database
@@ -52,3 +54,42 @@ def client(session):
         
     app.dependency_overrides[get_db]=override_get_db
     yield TestClient(app)
+
+
+
+@pytest.fixture
+def test_user(client):
+    user_data={
+        "email":"hello123@gmail.com",
+        "password":"123456"
+    }
+    res=client.post("/users/",json=user_data)
+    assert res.status_code==201
+    new_user=res.json()
+    new_user['password']=user_data['password']
+    return new_user
+
+@pytest.fixture
+def token(test_user):
+    return create_access_token({"user_id":test_user['id']})
+
+
+@pytest.fixture
+def authorized_client(client,token):
+    client.headers={
+        **client.headers,
+        "Authorization":f"Bearer {token}"
+    }
+    return client
+
+@pytest.fixture
+def test_posts(test_user,session):
+    posts_data=[
+        {"title":"first title","content":"first content","owner_id":test_user['id']},
+        {"title":"second title","content":"second content","owner_id":test_user['id']},
+        {"title":"third title","content":"third content","owner_id":test_user['id']}
+    ]
+
+    session.add_all([models.User(title="first title",content="irst content",owner_id=test_user['id']),
+    models.User(title="second title",content="second content",owner_id=test_user['id'])])
+    
