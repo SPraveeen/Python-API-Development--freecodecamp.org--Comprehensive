@@ -21,7 +21,7 @@ def test_unauthorized_user_get_one_post(client,test_posts):
     res=client.get(f"/posts/{test_posts[0].id}")
     assert res.status_code==401
 
-def test_get_onne_post_not_exist(authorized_client,test_posts):
+def test_get_one_post_not_exist(authorized_client,test_posts):
     res=authorized_client.get(f"/posts/999999")
     assert res.status_code==404
 
@@ -32,12 +32,12 @@ def test_get_one_post(authorized_client,test_posts):
     assert post.Post.content==test_posts[0].content
     assert post.Post.title==test_posts[0].title
 
-@pytest.mark.parametrize("title","content","published",[
+@pytest.mark.parametrize("title,content,published",[
     ("first title","first content",True),
     ("second title","second content",False),
     ("third title","third content",True)
-])
-def test_create_post(authorized_client,test_create_post,test_posts,title,content,published):
+], ids=["post1", "post2", "post3"])
+def test_create_post(authorized_client,test_posts,title,content,published,test_user):
     res=authorized_client.post("/posts/",json={"title":title,"content":content,"published":published})
 
     created_post=schemas.Post(**res.json())
