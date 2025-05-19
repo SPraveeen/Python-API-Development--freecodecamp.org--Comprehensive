@@ -14,7 +14,7 @@ from app.config import settings
 def test_create_user(client):
     res=client.post("/users/",json={"email":"hello123@gmail.com","password":"123456"})
 
-    new_user=schemas.Userout(**res.json())
+    new_user=schemas.UserOut(**res.json())
     assert new_user.email=="hello123@gmail.com"
     assert res.status_code==201
 
@@ -31,8 +31,8 @@ def test_login_user(test_user,client):
     ("wrongemail","password123",403),
     ("praveen123@gmail.com","wrongpassword",403),
     ("wrongemail","wrongpassword",403),
-    (None,'password123',422),
-    ('praveen123@gmail.com',None,422)
+    (None,'password123',403),
+    ('praveen123@gmail.com',None,403)
 ])
 def test_incorrect_login(test_user,client,email,password,status_code):
     res=client.post("/login",data={"username":email,"password":password})

@@ -5,6 +5,7 @@ from .routers import post,user,auth,vote
 from .config import settings
 from fastapi.middleware.cors import CORSMiddleware
 
+
 print(settings.database_password)
     
 

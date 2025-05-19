@@ -56,6 +56,17 @@ def client(session):
     yield TestClient(app)
 
 
+@pytest.fixture
+def test_user2(client):
+    user_data={
+        "email":"hello1234@gmail.com",
+        "password":"123456"
+    }
+    res=client.post("/users/",json=user_data)
+    assert res.status_code==201
+    new_user=res.json()
+    new_user['password']=user_data['password']
+    return new_user
 
 @pytest.fixture
 def test_user(client):
@@ -83,11 +94,12 @@ def authorized_client(client,token):
     return client
 
 @pytest.fixture
-def test_posts(test_user,session):
+def test_posts(test_user,session,test_user2):
     posts_data=[
         {"title":"first title","content":"first content","owner_id":test_user['id']},
         {"title":"second title","content":"second content","owner_id":test_user['id']},
-        {"title":"third title","content":"third content","owner_id":test_user['id']}
+        {"title":"third title","content":"third content","owner_id":test_user['id']},
+        {"title":"fourth title","content":"fourth content","owner_id":test_user2['id']}
     ]
 
     def create_post_model(post):
